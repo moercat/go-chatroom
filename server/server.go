@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -10,6 +11,17 @@ type Client struct {
 	Conn net.Conn // 连接信息
 	Name string   // 别名
 }
+
+type Message struct {
+	Name string // 用户名
+	Op   int    // 操作服务
+	Msg  string // 信息内容
+}
+
+const (
+	Read = iota + 1
+	Quit
+)
 
 var ConnMap = make(map[string]Client)
 
@@ -58,6 +70,11 @@ func handle(conn net.Conn) {
 		msgStr := strings.Split(string(data[0:ml]), "|")
 		fmt.Println(msgStr)
 
+		var cMsg Message
+		cMsg.Name = msgStr[0]
+		cMsg.Op, _ = strconv.Atoi(msgStr[1])
+		cMsg.Msg = msgStr[2]
+
 		name := msgStr[0]
 		// 每个人的连接信息
 		ConnMap[name] = Client{
@@ -65,6 +82,19 @@ func handle(conn net.Conn) {
 			Name: name,
 		}
 
+		switch cMsg.Op {
+		case Read:
+			cMsg.Read()
+		case Quit:
+
+		default:
+			fmt.Println("无效OP")
+		}
+
 	}
 
+}
+
+func (m Message) Read() {
+	fmt.Printf("用户:%s 发送了 %v 信息", m.Name, m.Msg)
 }
