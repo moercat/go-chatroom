@@ -9,6 +9,7 @@ import (
 const (
 	Say = iota + 1
 	Quit
+	Login
 )
 
 type Message struct {
@@ -38,6 +39,10 @@ func main() {
 	_, _ = fmt.Scanln(&baseMsg.Name)
 	fmt.Println("用户昵称为：", baseMsg.Name)
 
+	go baseMsg.Receive(conn)
+
+	baseMsg.Login(conn)
+
 	// 向服务端发送信息
 	for {
 		var msg = baseMsg
@@ -49,6 +54,8 @@ func main() {
 			msg.Say(conn)
 		case Quit:
 			msg.Quit(conn)
+		case Login:
+			fmt.Println("您已登录，输入无效,请重新输入")
 		default:
 			fmt.Println("输入无效op,请重新输入")
 		}
@@ -72,4 +79,27 @@ func (m Message) Say(conn net.Conn) {
 
 func (m Message) Quit(conn net.Conn) {
 	fmt.Println("quit 方法")
+}
+
+func (m Message) Receive(conn net.Conn) {
+	for {
+		data := make([]byte, 255)
+		ml, err := conn.Read(data)
+		if ml == 0 || err != nil {
+			// 收到的参数错误忽略、
+			continue
+		}
+		fmt.Println(string(data[:ml]))
+	}
+}
+
+func (m Message) Login(conn net.Conn) {
+	// Login 即为我们本地维护的Op表
+	msg := m.Name + "|" + strconv.Itoa(Login) + "|"
+
+	_, err := conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("通知服务端登录信息发送失败")
+		return
+	}
 }

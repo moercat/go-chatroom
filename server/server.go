@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Client struct {
@@ -21,6 +22,7 @@ type Message struct {
 const (
 	Read = iota + 1
 	Quit
+	NtyLogin
 )
 
 var ConnMap = make(map[string]Client)
@@ -87,6 +89,9 @@ func handle(conn net.Conn) {
 			cMsg.Read()
 		case Quit:
 
+		case NtyLogin:
+			cMsg.ntyLogin()
+
 		default:
 			fmt.Println("无效OP")
 		}
@@ -96,5 +101,27 @@ func handle(conn net.Conn) {
 }
 
 func (m Message) Read() {
-	fmt.Printf("用户:%s 发送了 %v 信息", m.Name, m.Msg)
+	fmt.Printf("%v 用户[%s]: %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, m.Msg)
+
+	for _, client := range ConnMap {
+		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, m.Msg)
+		_, err := client.Conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println("client Conn Error")
+			return
+		}
+	}
+
+}
+
+// 提醒所有人新用户上线
+func (m Message) ntyLogin() {
+	for _, client := range ConnMap {
+		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, "I Login")
+		_, err := client.Conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println("new user Conn Error")
+			continue
+		}
+	}
 }
