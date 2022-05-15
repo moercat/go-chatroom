@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -8,9 +9,16 @@ import (
 	"time"
 )
 
+type User struct {
+	Age string //年龄
+	Sex string //性别
+}
+
 type Client struct {
-	Conn net.Conn // 连接信息
-	Name string   // 别名
+	Conn   net.Conn // 连接信息
+	Name   string   // 别名
+	IsQuit bool     // 是否退出
+	User
 }
 
 type Message struct {
@@ -23,6 +31,7 @@ const (
 	Read = iota + 1
 	Quit
 	NtyLogin
+	UpdUser
 )
 
 var ConnMap = make(map[string]Client)
@@ -88,9 +97,11 @@ func handle(conn net.Conn) {
 		case Read:
 			cMsg.Read()
 		case Quit:
-
+			cMsg.Quit()
 		case NtyLogin:
 			cMsg.ntyLogin()
+		case UpdUser:
+			cMsg.UpdUser()
 
 		default:
 			fmt.Println("无效OP")
@@ -123,5 +134,51 @@ func (m Message) ntyLogin() {
 			fmt.Println("new user Conn Error")
 			continue
 		}
+	}
+}
+
+func (m Message) Quit() {
+	fmt.Printf("%v 用户[%s]: 退出 \n", time.Now().Format("2006-01-02 15:04:05"), m.Name)
+
+	// 与上线通知同理，遍历所有链接进行离线通知
+	for _, client := range ConnMap {
+		// 当找到自己时，关闭与自身的连接且忽略给自己的离线通知
+		if client.Name == m.Name {
+			client.Conn.Close()
+			continue
+		}
+		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, "I Logout")
+		_, err := client.Conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println("client Conn Error")
+			return
+		}
+	}
+
+}
+
+func (m Message) UpdUser() {
+	fmt.Printf("%v 用户[%s]: 修改用户信息 \n", time.Now().Format("2006-01-02 15:04:05"), m.Name)
+
+	var user User
+	// 解码 msg
+	err := json.Unmarshal([]byte(m.Msg), &user)
+	if err != nil {
+		return
+	}
+
+	ConnMap[m.Name] = Client{
+		Conn:   ConnMap[m.Name].Conn,
+		Name:   ConnMap[m.Name].Name,
+		IsQuit: true,
+		User:   user,
+	}
+
+	fmt.Printf("%v 用户[%s]: 用户信息 %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, user)
+	msg := fmt.Sprintf("%v 用户[%s]: 用户信息 %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, ConnMap[m.Name].User)
+	_, err = ConnMap[m.Name].Conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("client Conn Error")
+		return
 	}
 }

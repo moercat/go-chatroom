@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -10,7 +11,13 @@ const (
 	Say = iota + 1
 	Quit
 	Login
+	UpdUser
 )
+
+type User struct {
+	Age string //年龄
+	Sex string //性别
+}
 
 type Message struct {
 	Name string // 用户名
@@ -56,6 +63,8 @@ func main() {
 			msg.Quit(conn)
 		case Login:
 			fmt.Println("您已登录，输入无效,请重新输入")
+		case UpdUser:
+			msg.UpdUser(conn)
 		default:
 			fmt.Println("输入无效op,请重新输入")
 		}
@@ -78,7 +87,15 @@ func (m Message) Say(conn net.Conn) {
 }
 
 func (m Message) Quit(conn net.Conn) {
-	fmt.Println("quit 方法")
+
+	msg := m.Name + "|" + strconv.Itoa(Quit) + "|"
+
+	_, err := conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("离线失败")
+		return
+	}
+	fmt.Println("离线成功")
 }
 
 func (m Message) Receive(conn net.Conn) {
@@ -102,4 +119,28 @@ func (m Message) Login(conn net.Conn) {
 		fmt.Println("通知服务端登录信息发送失败")
 		return
 	}
+}
+
+func (m Message) UpdUser(conn net.Conn) {
+	var user User
+	fmt.Println("请输入想要的更新的用户年龄：")
+	_, _ = fmt.Scanln(&user.Age)
+	fmt.Println("请输入想要的更新的用户性别：")
+	_, _ = fmt.Scanln(&user.Sex)
+
+	marshal, err := json.Marshal(user)
+	if err != nil {
+		return
+	}
+
+	m.Msg = string(marshal)
+
+	msg := m.Name + "|" + strconv.Itoa(m.Op) + "|" + m.Msg
+
+	_, err = conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("修改失败")
+		return
+	}
+	fmt.Println("修改成功")
 }
