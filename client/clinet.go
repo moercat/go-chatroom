@@ -3,27 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"go-chatroom/pkg/entity/model"
+	"go-chatroom/pkg/enum"
 	"net"
-	"strconv"
 )
-
-const (
-	Say = iota + 1
-	Quit
-	Login
-	UpdUser
-)
-
-type User struct {
-	Age string //年龄
-	Sex string //性别
-}
-
-type Message struct {
-	Name string // 用户名
-	Op   int    // 操作服务
-	Msg  string // 信息内容
-}
 
 func main() {
 	// 连接地址
@@ -41,14 +24,14 @@ func main() {
 	fmt.Println("已连接到", conn.RemoteAddr())
 
 	//	定义基础信息，输入用户昵称
-	var baseMsg Message
+	var baseMsg model.Message
 	fmt.Println("请输入用户昵称：")
 	_, _ = fmt.Scanln(&baseMsg.Name)
 	fmt.Println("用户昵称为：", baseMsg.Name)
 
-	go baseMsg.Receive(conn)
+	go Receive(conn, baseMsg)
 
-	baseMsg.Login(conn)
+	Login(conn, baseMsg)
 
 	// 向服务端发送信息
 	for {
@@ -57,14 +40,14 @@ func main() {
 		_, _ = fmt.Scanln(&msg.Op)
 
 		switch msg.Op {
-		case Say:
-			msg.Say(conn)
-		case Quit:
-			msg.Quit(conn)
-		case Login:
+		case enum.Chat:
+			Say(conn, msg)
+		case enum.Logout:
+			Quit(conn, msg)
+		case enum.Login:
 			fmt.Println("您已登录，输入无效,请重新输入")
-		case UpdUser:
-			msg.UpdUser(conn)
+		case enum.UpdateUser:
+			UpdUser(conn, msg)
 		default:
 			fmt.Println("输入无效op,请重新输入")
 		}
@@ -72,13 +55,17 @@ func main() {
 	}
 }
 
-func (m Message) Say(conn net.Conn) {
+func Say(conn net.Conn, m model.Message) {
 	fmt.Println("请输入想要的发送的内容：")
 	_, _ = fmt.Scanln(&m.Msg)
 
-	msg := m.Name + "|" + strconv.Itoa(m.Op) + "|" + m.Msg
+	msg, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println("json.Marshal error:", err)
+		return
+	}
 
-	_, err := conn.Write([]byte(msg))
+	_, err = conn.Write(msg)
 	if err != nil {
 		fmt.Println("发送失败")
 		return
@@ -86,11 +73,15 @@ func (m Message) Say(conn net.Conn) {
 	fmt.Println("发送成功")
 }
 
-func (m Message) Quit(conn net.Conn) {
+func Quit(conn net.Conn, m model.Message) {
 
-	msg := m.Name + "|" + strconv.Itoa(Quit) + "|"
+	msg, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println("json.Marshal error:", err)
+		return
+	}
 
-	_, err := conn.Write([]byte(msg))
+	_, err = conn.Write(msg)
 	if err != nil {
 		fmt.Println("离线失败")
 		return
@@ -98,7 +89,7 @@ func (m Message) Quit(conn net.Conn) {
 	fmt.Println("离线成功")
 }
 
-func (m Message) Receive(conn net.Conn) {
+func Receive(conn net.Conn, m model.Message) {
 	for {
 		data := make([]byte, 255)
 		ml, err := conn.Read(data)
@@ -110,19 +101,22 @@ func (m Message) Receive(conn net.Conn) {
 	}
 }
 
-func (m Message) Login(conn net.Conn) {
+func Login(conn net.Conn, m model.Message) {
 	// Login 即为我们本地维护的Op表
-	msg := m.Name + "|" + strconv.Itoa(Login) + "|"
-
-	_, err := conn.Write([]byte(msg))
+	msg, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println("json.Marshal error:", err)
+		return
+	}
+	_, err = conn.Write(msg)
 	if err != nil {
 		fmt.Println("通知服务端登录信息发送失败")
 		return
 	}
 }
 
-func (m Message) UpdUser(conn net.Conn) {
-	var user User
+func UpdUser(conn net.Conn, m model.Message) {
+	var user model.User
 	fmt.Println("请输入想要的更新的用户年龄：")
 	_, _ = fmt.Scanln(&user.Age)
 	fmt.Println("请输入想要的更新的用户性别：")
@@ -135,9 +129,13 @@ func (m Message) UpdUser(conn net.Conn) {
 
 	m.Msg = string(marshal)
 
-	msg := m.Name + "|" + strconv.Itoa(m.Op) + "|" + m.Msg
+	msg, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println("json.Marshal error:", err)
+		return
+	}
 
-	_, err = conn.Write([]byte(msg))
+	_, err = conn.Write(msg)
 	if err != nil {
 		fmt.Println("修改失败")
 		return

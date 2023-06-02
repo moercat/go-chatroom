@@ -3,38 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"go-chatroom/pkg/chat"
+	"go-chatroom/pkg/entity/model"
+	"go-chatroom/pkg/enum"
 	"net"
-	"strconv"
-	"strings"
 	"time"
 )
 
-type User struct {
-	Age string //年龄
-	Sex string //性别
-}
-
-type Client struct {
-	Conn   net.Conn // 连接信息
-	Name   string   // 别名
-	IsQuit bool     // 是否退出
-	User
-}
-
-type Message struct {
-	Name string // 用户名
-	Op   int    // 操作服务
-	Msg  string // 信息内容
-}
-
-const (
-	Read = iota + 1
-	Quit
-	NtyLogin
-	UpdUser
-)
-
-var ConnMap = make(map[string]Client)
+var ConnMap = make(map[string]model.Client)
 
 func main() {
 	// 使用 net 包的 Listen 函数监听 127.0.0.1:8000 上的 tcp 连接
@@ -77,31 +53,29 @@ func handle(conn net.Conn) {
 		}
 
 		// 解析协议
-		//  Name | Op | Msg | ...Other Operation
-		msgStr := strings.Split(string(data[0:ml]), "|")
-		fmt.Println(msgStr)
+		var cMsg model.Message
+		err = json.Unmarshal(data[0:ml], &cMsg)
+		if err != nil {
+			fmt.Println("json.Unmarshal error:", err)
+			return
+		}
+		name := cMsg.Name
 
-		var cMsg Message
-		cMsg.Name = msgStr[0]
-		cMsg.Op, _ = strconv.Atoi(msgStr[1])
-		cMsg.Msg = msgStr[2]
-
-		name := msgStr[0]
 		// 每个人的连接信息
-		ConnMap[name] = Client{
+		ConnMap[name] = model.Client{
 			Conn: conn,
 			Name: name,
 		}
 
 		switch cMsg.Op {
-		case Read:
-			cMsg.Read()
-		case Quit:
-			cMsg.Quit()
-		case NtyLogin:
-			cMsg.ntyLogin()
-		case UpdUser:
-			cMsg.UpdUser()
+		case enum.Chat:
+			Read(cMsg)
+		case enum.Logout:
+			Quit(cMsg)
+		case enum.Login:
+			ntyLogin(cMsg)
+		case enum.UpdateUser:
+			UpdUser(cMsg)
 
 		default:
 			fmt.Println("无效OP")
@@ -111,12 +85,12 @@ func handle(conn net.Conn) {
 
 }
 
-func (m Message) Read() {
+func Read(m model.Message) {
 	fmt.Printf("%v 用户[%s]: %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, m.Msg)
 
 	for _, client := range ConnMap {
 		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, m.Msg)
-		_, err := client.Conn.Write([]byte(msg))
+		_, err := client.Conn.Write([]byte(chat.ShowInOneArea(enum.PublicScreen, msg)))
 		if err != nil {
 			fmt.Println("client Conn Error")
 			return
@@ -126,10 +100,10 @@ func (m Message) Read() {
 }
 
 // 提醒所有人新用户上线
-func (m Message) ntyLogin() {
+func ntyLogin(m model.Message) {
 	for _, client := range ConnMap {
 		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, "I Login")
-		_, err := client.Conn.Write([]byte(msg))
+		_, err := client.Conn.Write([]byte(chat.ShowInOneArea(enum.PublicScreen, msg)))
 		if err != nil {
 			fmt.Println("new user Conn Error")
 			continue
@@ -137,7 +111,7 @@ func (m Message) ntyLogin() {
 	}
 }
 
-func (m Message) Quit() {
+func Quit(m model.Message) {
 	fmt.Printf("%v 用户[%s]: 退出 \n", time.Now().Format("2006-01-02 15:04:05"), m.Name)
 
 	// 与上线通知同理，遍历所有链接进行离线通知
@@ -148,7 +122,7 @@ func (m Message) Quit() {
 			continue
 		}
 		msg := fmt.Sprintf("%v [%s]: %v", time.Now().Format("2006-01-02 15:04:05"), m.Name, "I Logout")
-		_, err := client.Conn.Write([]byte(msg))
+		_, err := client.Conn.Write([]byte(chat.ShowInOneArea(enum.PublicScreen, msg)))
 		if err != nil {
 			fmt.Println("client Conn Error")
 			return
@@ -157,17 +131,17 @@ func (m Message) Quit() {
 
 }
 
-func (m Message) UpdUser() {
+func UpdUser(m model.Message) {
 	fmt.Printf("%v 用户[%s]: 修改用户信息 \n", time.Now().Format("2006-01-02 15:04:05"), m.Name)
 
-	var user User
+	var user model.User
 	// 解码 msg
 	err := json.Unmarshal([]byte(m.Msg), &user)
 	if err != nil {
 		return
 	}
 
-	ConnMap[m.Name] = Client{
+	ConnMap[m.Name] = model.Client{
 		Conn:   ConnMap[m.Name].Conn,
 		Name:   ConnMap[m.Name].Name,
 		IsQuit: true,
@@ -176,7 +150,7 @@ func (m Message) UpdUser() {
 
 	fmt.Printf("%v 用户[%s]: 用户信息 %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, user)
 	msg := fmt.Sprintf("%v 用户[%s]: 用户信息 %v \n", time.Now().Format("2006-01-02 15:04:05"), m.Name, ConnMap[m.Name].User)
-	_, err = ConnMap[m.Name].Conn.Write([]byte(msg))
+	_, err = ConnMap[m.Name].Conn.Write([]byte(chat.ShowInOneArea(enum.PublicScreen, msg)))
 	if err != nil {
 		fmt.Println("client Conn Error")
 		return
