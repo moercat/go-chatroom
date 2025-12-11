@@ -4,14 +4,14 @@ type Area string
 
 const (
 	PublicScreen Area = "public_screen" // 公屏
-	GroupChat    Area = "group_chat"    //群聊
-	PrivateChat  Area = "private_chat"  //私聊
+	GroupArea    Area = "group_chat"    //群聊
+	PrivateArea  Area = "private_chat"  //私聊
 )
 
 var areaMap = map[Area]string{
 	PublicScreen: "【公屏】",
-	GroupChat:    "【群聊】",
-	PrivateChat:  "【私聊】",
+	GroupArea:    "【群聊】",
+	PrivateArea:  "【私聊】",
 }
 
 // AreaCheck 检查是否是合法区域，默认在公屏聊天

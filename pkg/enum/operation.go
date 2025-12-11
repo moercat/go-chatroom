@@ -9,6 +9,11 @@ const (
 	Logout
 	Login
 	UpdateUser
+	PrivateChat // 私聊
+	GroupChat   // 群聊
+	CreateGroup // 创建群组
+	ListGroups  // 列出群组
+	ListUsers   // 列出在线用户
 )
 
 func MsgToOperation(msg string) (op Operation) {
