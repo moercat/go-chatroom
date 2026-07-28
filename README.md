@@ -1,80 +1,73 @@
 # Go 聊天室
 
-Advanced chat room
+> 基于 Go TCP 的多人在线聊天室
 
-![example](https://img.shields.io/badge/Go-1.16-blue)
+![Go Version](https://img.shields.io/badge/Go-1.18%2B-blue)
+![Status](https://img.shields.io/badge/Status-学习参考-blue)
+![Stars](https://img.shields.io/badge/Stars-8-brightgreen)
+[![CI](https://github.com/moercat/go-chatroom/actions/workflows/go.yml/badge.svg)](https://github.com/moercat/go-chatroom/actions/workflows/go.yml)
 
-## 目的
+## 定位
 
-本项目采用了简单的客户端服务端架构，实现一个功能丰富的多人在线聊天室
+**解决了什么问题**：从零实现一个基于 Go TCP 的多人在线聊天室，包含全部常用功能（单聊、群聊、公屏、上下线通知）。
 
-## 特色
-从零开始实现一个基于Go的多人在线聊天室，功能包括：单聊、群聊、昵称、上下线通知、聊天日志等等
+**目标用户**：Go 网络编程学习者。
 
-[X]加入聊天室
-[X]广播通知
-[X]公屏聊天
-[X]聊天日志
-[X]群聊
-[X]单聊
-[X]退出
-[X]创建群组
-[X]查看群组列表
-[X]查看在线用户列表
-[X]修改个人资料
+**学习价值**：纯 Go 标准库实现（net 包），展示 TCP server/client 架构设计。
 
-## 运行
+## 快速开始
 
-### 原始命令行客户端
+```bash
+git clone https://github.com/moercat/go-chatroom.git
+cd go-chatroom
 
-服务端
-```shell
-cd server
-go run server.go
+# 启动 TCP 服务端
+cd server && go run server.go
+
+# 启动 Web API（新标签页）
+cd api && go run main.go
+
+# 客户端（开多个窗口）
+cd client && go run client.go
 ```
 
-客户端(要开启几个客户端就开几个窗口)
-```shell
-cd client
-go run client.go
-```
+环境要求：Go 1.18+。
 
-### Web界面（新功能）
-
-现在项目还支持现代化的Web界面，可通过浏览器访问：
-
-1. 启动TCP服务器（同上）
-2. 启动Web API服务器：
-```shell
-cd api
-go run main.go
-```
-3. 访问 http://localhost:8080
-
-#### 使用一键启动脚本
-
-或者使用一键启动脚本：
-```shell
-./start_web_chatroom.sh
-```
-
-该脚本会自动检查并启动TCP聊天服务器（如果未运行），然后启动Web API服务器，并自动打开浏览器。
-
-详细信息请查看 WEB_README.md
-
-## 项目结构
+## 架构
 
 ```
 go-chatroom/
-├── client/           # 原始命令行客户端
-├── server/           # 原始TCP聊天服务器
-├── web/              # Web界面文件
-│   ├── index.html    # 主页面
-│   ├── style.css     # 样式文件
-│   └── script.js     # 前端JavaScript逻辑
-├── api/              # Web API服务器
-│   ├── main.go       # API服务器代码
-│   └── go.mod        # 依赖管理
-├── start_web_chatroom.sh  # 一键启动脚本
-└── WEB_README.md     # Web界面详细使用说明
+├── server/     ← TCP 聊天服务器（核心）
+├── client/     ← 命令行聊天客户端
+├── api/        ← Web API 服务（WebSocket 桥接）
+├── web/        ← 前端界面（HTML/CSS/JS）
+└── start_web_chatroom.sh  ← 一键启动脚本
 ```
+
+## 功能
+
+- [x] 加入/退出聊天室
+- [x] 公屏聊天（广播）
+- [x] 单聊（私信）
+- [x] 群聊（创建/加入群组）
+- [x] 上下线通知
+- [x] 在线用户列表
+- [x] 聊天日志
+- [x] 个人资料修改
+- [x] Web 界面（新功能）
+
+## 技术栈
+
+| 组件 | 选型 |
+|------|------|
+| 语言 | Go 1.18 |
+| 网络 | net 标准库（TCP） |
+| 前端 | 原生 HTML/CSS/JS |
+
+## 状态
+
+| 维度 | 说明 |
+|------|------|
+| 当前阶段 | 功能完整，可作为学习参考 |
+| 最后更新 | 2025-12-16 |
+| 活跃度 | 💤 休眠 |
