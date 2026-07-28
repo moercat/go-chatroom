@@ -26,6 +26,7 @@
                 <h2>Go 聊天室</h2>
                 <div class="user-info">
                     <span id="current-user">用户</span>
+                    <span id="unread-badge" class="badge" style="display:none;background:red;color:white;border-radius:10px;padding:2px 6px;margin-left:8px;font-size:12px;">0</span>
                     <button id="logout-btn" class="btn btn-small">退出</button>
                 </div>
             </header>
@@ -47,6 +48,7 @@
                                     <option value="">选择私聊对象</option>
                                 </select>
                             </div>
+                            <div id="private-messages"></div>
                         </div>
                         <div id="group-chat" class="chat-messages hidden">
                             <div class="group-controls">
@@ -55,6 +57,7 @@
                                 </select>
                                 <button id="create-group-btn" class="btn btn-small">创建群组</button>
                             </div>
+                            <div id="group-messages"></div>
                         </div>
                     </div>
                     
@@ -110,6 +113,7 @@
         </div>
     </div>
 
+    <script src="sidebar.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
