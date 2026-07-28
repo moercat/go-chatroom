@@ -109,8 +109,11 @@ func isForUser(m model.Message, user string) bool {
 	case "private_chat":
 		return m.Name == user || m.Target == user
 	case "group_chat":
-		// 简化：群组成员关系在内存另存（实际应有 friends/group 模块）
-		return true
+		// 真正判断群成员资格（依赖 store.IsInGroup）
+		if m.Group == "" {
+			return false
+		}
+		return IsInGroup(m.Group, user)
 	}
 	return false
 }

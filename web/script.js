@@ -74,14 +74,22 @@ class ChatClient {
         }
 
         this.currentUser = username;
+        window.currentUser = username;  // 暴露给 sidebar.js
 
         try {
             // 连接到WebSocket服务器
             this.connectWebSocket(username);
-            
+
             // 切换到聊天界面
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('chat-screen').classList.remove('hidden');
+
+            // 接入 sidebar.js：拉取好友/群组/未读数
+            if (window.ChatSidebar) {
+                window.ChatSidebar.refreshUnread(username);
+                window.ChatSidebar.refreshFriends(username);
+                window.ChatSidebar.refreshGroups();
+            }
             document.getElementById('current-user').textContent = username;
         } catch (error) {
             console.error('登录失败:', error);
