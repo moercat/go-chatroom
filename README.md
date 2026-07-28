@@ -20,22 +20,14 @@
 ## 🚀 一键启动
 
 ```bash
-./start_web_chatroom.sh   # 自动启动 TCP server + HTTP API + Web
+make web     # 等价于 ./start_web_chatroom.sh
 ```
 
-或手动：
+或手动开 3 个终端：
 
 ```bash
-# 终端 1
-cd server && go run server.go    # TCP 8888
-
-# 终端 2
-cd api && go run main.go         # HTTP 8080
-
-# 终端 3（开多个测试）
-cd client && go run client.go    # 命令行客户端
-
-# 浏览器
+make tcp     # TCP 8888
+make api     # HTTP 8080
 open web/index.html
 ```
 
