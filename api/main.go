@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go-chatroom/internal/friend"
 	"go-chatroom/pkg/entity/model"
 	"go-chatroom/pkg/enum"
+	"go-chatroom/pkg/store"
 	"log"
 	"net"
 	"net/http"
@@ -59,6 +61,9 @@ func main() {
 	})
 
 	http.HandleFunc("/ws", handleWebSocket)
+
+	// 好友 / 群组 / 消息历史 API
+	friend.Register(http.DefaultServeMux)
 
 	fmt.Printf("Web聊天室服务器启动在端口 %s\n", *port)
 	fmt.Printf("请访问 http://localhost:%s\n", *port)
